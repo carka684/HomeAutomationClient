@@ -1,50 +1,45 @@
+#include "LowPower.h"
 
 
-/*
- Copyright (C) 2012 James Coliz, Jr. <maniacbug@ymail.com>
- 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- version 2 as published by the Free Software Foundation.
- */
-
-/**
- * Simplest possible example of using RF24Network,
- *
- * RECEIVER NODE
- * Listens for messages from the transmitter and prints them out.
- */
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>
 #include <RF24.h>
 #include <SPI.h>
 #include <printf.h>
-#include <sleep.h>
 int ledPin = 2;
+int tempC;
+int reading;
+int tempPin = 0;
+int voltPin = 1;
+int sleepCycles = 8;
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(6,7);
 
 // Network uses that radio
 RF24Network network(radio);
 const int rootNode = 0;
-int lastSent = 0;
+unsigned long lastSent = 0;
 bool lastValue = 0; 
-unsigned long sendInterval = 500;
+unsigned long sendInterval = 5000;
 int packets_sent = 0;
 // Address of our node
 eeprom_info_t this_node;
 // Structure of our payload
 struct payload_t
 {
-  unsigned long led;
+  unsigned long value;
   unsigned long counter;
   char c;
 };
 
 void setup(void)
 {
+  analogReference(INTERNAL);
   pinMode(ledPin,OUTPUT);
+  pinMode(voltPin,INPUT);
+  pinMode(tempPin,INPUT);
+  
   Serial.begin(57600);
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
@@ -56,33 +51,26 @@ void setup(void)
 
 void loop(void)
 {
-  // Pump the network regularly
-  network.update();
-  if(millis() - lastSent> sendInterval)
+  if(sleepCycles > 7)
   {
-    while(!sendData(rootNode, 1))
-      ;    
-    lastSent = millis();
-    packets_sent++;
-    radio.powerDown();
+    network.update();
+    int time = millis();
+    sendData(rootNode, 100*getVoltage(), 'V');
+    sendData(rootNode, 100*getTemp(), 'T');
+    Serial.print("Time: ");
+    Serial.println(millis() - time);
+    sleepCycles = 0;
+  }
+  sleepCycles++;
+  radio.powerDown();
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
     
-  }
-
-  // Is there anything ready for us?
-  if ( network.available() )
-  {
-    // If so, grab it and print it out
-    RF24NetworkHeader header;
-    payload_t payload;
-    network.read(header,&payload,sizeof(payload));
-    readData(payload);
-  }
 }
-bool sendData(uint16_t toNode, int value)
+bool sendData(uint16_t toNode, int value, char c)
 {
-  Serial.print("Sending...");
-  payload_t payload = {
-    value , packets_sent, 'a'           };
+  Serial.print("Sending...: ");
+  Serial.print(value);
+  payload_t payload = {value , packets_sent++, c};
   RF24NetworkHeader header(/*to node*/ toNode);
   bool ok = network.write(header,&payload,sizeof(payload));
   if (ok)
@@ -91,23 +79,16 @@ bool sendData(uint16_t toNode, int value)
     Serial.println("failed.");
   return ok;
 }
-void readData(struct payload_t payload)
+float getTemp()
 {
-  Serial.print("Received packet: #");
-  Serial.print(payload.counter);
-  Serial.print(" value: ");
-  Serial.print(payload.led);
-  Serial.print(" char: ");
-  Serial.println(payload.c);
-  if(payload.led == 1)
-  {
-    digitalWrite(ledPin, HIGH);
-  }
-  else
-  {
-    digitalWrite(ledPin, LOW);
-  }
-
+  reading = analogRead(tempPin);
+  return reading/9.81;
+}
+float getVoltage()
+{
+  reading = analogRead(voltPin);
+  return (reading*2.818*1.1)/1023;
 }
 // vim:ai:cin:sts=2 sw=2 ft=cpp
+
 

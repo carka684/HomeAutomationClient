@@ -1,0 +1,9 @@
+
+Line	 From Arduino Pin	To Radio Pin	 
+GND	 GND			1	 
+3V3	 3V3	 		2	 
+CE	 12	 		3	 
+CSN	 13			4	 
+SCK	 19	 		5	 
+MOSI	 17	 		6	 
+MISO	 18			7	 

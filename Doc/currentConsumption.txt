@@ -1,0 +1,3 @@
+Idle: 5,5uA
+Sending: 16,3mA
+Time sending (avg): 5ms 

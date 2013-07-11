@@ -33,12 +33,12 @@ int i = 0;
  */
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-IPAddress ip(192,168,1,120);
 EthernetClient client;
-IPAddress server(192,168,1,101);
+IPAddress server(79,136,60,91);
+
 unsigned long lastConnectionTime = 0;          // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                 // state of the connection last time through the main loop
-const unsigned long postingInterval = 30000;  // delay between updates, in milliseconds
+const unsigned long postingInterval = 1000;  // delay between updates, in milliseconds
 int time = 0;
 int counterStar = 0;
 int counterMinus = 0;
@@ -69,7 +69,7 @@ unsigned long packets_sent;
 // Structure of our payload
 struct payload_t
 {
-  unsigned long led;
+  unsigned long value;
   unsigned long counter;
   char c;
 };
@@ -82,6 +82,7 @@ struct message_t
 
 message_t message;
 
+bool test = true;
 void setup(void)
 {
   pinMode(ledPin,OUTPUT);
@@ -94,7 +95,7 @@ void setup(void)
   network.begin(/*channel*/ 90, /*node address*/ this_node.address);
 
   delay(1000);
-  Ethernet.begin(mac, ip);
+  Ethernet.begin(mac);
   Serial.print("My IP address: ");
   Serial.println(Ethernet.localIP());
 
@@ -109,9 +110,11 @@ void loop(void)
     RF24NetworkHeader header;
     payload_t payload;
     network.read(header,&payload,sizeof(payload));
-    readData(payload);
+    readData(payload, header.from_node);
+    
   }
   
+  /*
   int i = 0;
   while (client.available()) {
     Serial.println(seekCharArray[i]);
@@ -141,30 +144,63 @@ void loop(void)
       
     }
   }
-  
+  */
+   if (client.available()) {
+    char c = client.read();
+    Serial.print(c);
+  }
 
   // if there's no net connection, but there was one last time
   // through the loop, then stop the client:
   if (!client.connected() && lastConnected) {
+    Serial.println();
     client.stop();
   }
   // if you're not connected, and ten seconds have passed since
   // your last connection, then connect again and send data:
   if(!client.connected() && (millis() - lastConnectionTime > postingInterval)) {
-    httpRequest();
+    //httpRequest();
+    //httpPostSensorData("");
   }
   // store the state of the connection for next time through
   // the loop:
   lastConnected = client.connected();
 }
 // this method makes a HTTP connection to the server:
+void httpPostSensorData(float value, int fromNode)
+{
+    Serial.println("\n post");
+    if (client.connect(server, 80)) 
+    {
+      // send the HTTP PUT request:
+      client.print("GET /postSensorData.php?");
+      client.print("fromNode=");
+      client.print(fromNode);
+      client.print("&");
+      client.print("value=");
+      client.print(value/100);
+      client.println(" HTTP/1.1");
+      client.println("Host: www.calle.myxtreamer.net");
+      client.println("User-Agent: arduino-ethernet");
+      client.println("Connection: close");
+      client.println();
+      client.stop();
+      Serial.println("Post successful");
+    }  
+    else
+    {
+     Serial.println("Post failed");
+     client.stop();
+     }
+}
 void httpRequest() {
+  Serial.println("http");
   // if there's a successful connection:
   if (client.connect(server, 80)) {
     // send the HTTP PUT request:
 
     client.println("GET /info.php HTTP/1.1");
-    client.println("Host: www.calle.myxtreamer.net");
+    client.println("Host: calle.st");
     client.println("User-Agent: arduino-ethernet");
     client.println("Connection: close");
     client.println();
@@ -188,15 +224,15 @@ void httpRequest() {
     client.stop();
   }
 }
-void readData(struct payload_t payload)
+void readData(struct payload_t payload, int fromNode)
 {
     Serial.print("Received packet: #");
     Serial.print(payload.counter);
     Serial.print(" value: ");
-    Serial.print(payload.led);
+    Serial.print(payload.value);
     Serial.print(" char: ");
     Serial.println(payload.c);
-    if(payload.led == 1)
+    if(payload.value == 1)
     {
       digitalWrite(ledPin, HIGH);
     }
@@ -204,6 +240,7 @@ void readData(struct payload_t payload)
     {
        digitalWrite(ledPin, LOW);
     }
+    httpPostSensorData(payload.value,fromNode);
   
 }
 
