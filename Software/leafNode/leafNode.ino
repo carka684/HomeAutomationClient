@@ -12,6 +12,7 @@ int tempC;
 int reading;
 int tempPin = 0;
 int voltPin = 1;
+int transPin = 8;
 int sleepCycles = 8;
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(6,7);
@@ -36,11 +37,12 @@ struct payload_t
 void setup(void)
 {
   analogReference(INTERNAL);
-  pinMode(ledPin,OUTPUT);
   pinMode(voltPin,INPUT);
   pinMode(tempPin,INPUT);
+  pinMode(transPin,OUTPUT);
   
   Serial.begin(57600);
+  
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
   this_node = nodeconfig_read();
@@ -81,7 +83,9 @@ bool sendData(uint16_t toNode, int value, char c)
 }
 float getTemp()
 {
+  digitalWrite(transPin,HIGH);
   reading = analogRead(tempPin);
+  digitalWrite(transPin,LOW);
   return reading/9.81;
 }
 float getVoltage()
