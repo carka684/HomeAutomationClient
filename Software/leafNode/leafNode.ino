@@ -1,12 +1,13 @@
 #include "LowPower.h"
-
-
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>
 #include <RF24.h>
 #include <SPI.h>
 #include <printf.h>
+#include <avr/io.h> 
+#include <avr/wdt.h>
+
 int ledPin = 2;
 int tempC;
 int reading;
@@ -42,17 +43,19 @@ void setup(void)
   pinMode(transPin,OUTPUT);
   
   Serial.begin(57600);
-  
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
   this_node = nodeconfig_read();
   SPI.begin();
   radio.begin();
   network.begin(/*channel*/ 90, /*node address*/ this_node.address);
+  
+
 }
 
 void loop(void)
 {
+  
   if(sleepCycles > 7)
   {
     network.update();
@@ -64,6 +67,7 @@ void loop(void)
     sleepCycles = 0;
   }
   sleepCycles++;
+  
   radio.powerDown();
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
     
@@ -84,6 +88,7 @@ bool sendData(uint16_t toNode, int value, char c)
 float getTemp()
 {
   digitalWrite(transPin,HIGH);
+  delay(1);
   reading = analogRead(tempPin);
   digitalWrite(transPin,LOW);
   return reading/9.81;
@@ -93,6 +98,10 @@ float getVoltage()
   reading = analogRead(voltPin);
   return (reading*2.818*1.1)/1023;
 }
-// vim:ai:cin:sts=2 sw=2 ft=cpp
-
+void changeAddress(int newAddress)
+{
+  eepromChangeAddress(newAddress);
+  wdt_enable(WDTO_15MS);
+  while(1);  
+}
 

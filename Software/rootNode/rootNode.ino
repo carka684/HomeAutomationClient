@@ -93,12 +93,11 @@ void setup(void)
   SPI.begin();
   radio.begin();
   network.begin(/*channel*/ 90, /*node address*/ this_node.address);
-
   delay(1000);
   Ethernet.begin(mac);
   Serial.print("My IP address: ");
   Serial.println(Ethernet.localIP());
-
+  
 }
 
 void loop(void)

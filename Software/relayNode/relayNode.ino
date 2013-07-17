@@ -1,23 +1,12 @@
-/*
- Copyright (C) 2012 James Coliz, Jr. <maniacbug@ymail.com>
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- version 2 as published by the Free Software Foundation.
- */
-
-/**
- * Simplest possible example of using RF24Network,
- *
- * RECEIVER NODE
- * Listens for messages from the transmitter and prints them out.
- */
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>
 #include <RF24.h>
 #include <SPI.h>
 #include <printf.h>
+#include <avr/io.h> 
+#include <avr/wdt.h>
 int ledPin = 2;
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(6,7);
@@ -37,8 +26,10 @@ struct payload_t
 
 void setup(void)
 {
+ 
   pinMode(ledPin,OUTPUT);
   Serial.begin(57600);
+  //test();
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
   this_node = nodeconfig_read();
@@ -80,4 +71,9 @@ void readData(struct payload_t payload)
     }
   
 }
-// vim:ai:cin:sts=2 sw=2 ft=cpp
+void changeAddress(int newAddress)
+{
+  eepromChangeAddress(newAddress);
+  wdt_enable(WDTO_15MS);
+  while(1);  
+}
