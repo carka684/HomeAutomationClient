@@ -1,0 +1,7 @@
+Meddelandet som huvudnoden sänder bör innehålla:
+
+fromNode,value,sensorID
+
+fromNode: Vilken nod i trädet som skickade datan
+value: Värdet som ska lagras
+sensorID: SensorID, en enhet kan ha flera sensorer och därför måste man avgöra vilken som skickade värdet

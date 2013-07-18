@@ -1,7 +1,4 @@
-
-
-
-
+#include <globals.h>
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>
@@ -67,12 +64,7 @@ unsigned long last_sent;
 unsigned long packets_sent;
 
 // Structure of our payload
-struct payload_t
-{
-  unsigned long value;
-  unsigned long counter;
-  char c;
-};
+
 struct message_t
 {
   int toNode;
@@ -166,7 +158,7 @@ void loop(void)
   lastConnected = client.connected();
 }
 // this method makes a HTTP connection to the server:
-void httpPostSensorData(float value, int fromNode)
+void httpPostSensorData(float value,int sensorID, int fromNode)
 {
     Serial.println("\n post");
     if (client.connect(server, 80)) 
@@ -178,6 +170,9 @@ void httpPostSensorData(float value, int fromNode)
       client.print("&");
       client.print("value=");
       client.print(value/100);
+      client.print("&");
+      client.print("sensorID=");
+      client.print(sensorID);
       client.println(" HTTP/1.1");
       client.println("Host: www.calle.myxtreamer.net");
       client.println("User-Agent: arduino-ethernet");
@@ -225,21 +220,17 @@ void httpRequest() {
 }
 void readData(struct payload_t payload, int fromNode)
 {
-    Serial.print("Received packet: #");
-    Serial.print(payload.counter);
-    Serial.print(" value: ");
-    Serial.print(payload.value);
-    Serial.print(" char: ");
-    Serial.println(payload.c);
-    if(payload.value == 1)
-    {
-      digitalWrite(ledPin, HIGH);
-    }
-    else
-    {
-       digitalWrite(ledPin, LOW);
-    }
-    httpPostSensorData(payload.value,fromNode);
+    int command = payload.command;
+    int value = payload.value;
+    int sensorID = payload.sensorID;
+    Serial.print("Command: ");
+    Serial.print(command);
+    Serial.print(" Value: ");
+    Serial.print(value);
+    Serial.print(" SensorID: ");
+    Serial.println(sensorID);
+
+    httpPostSensorData(value,sensorID,fromNode);
   
 }
 

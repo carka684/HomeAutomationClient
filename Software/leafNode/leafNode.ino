@@ -1,4 +1,5 @@
 #include "LowPower.h"
+#include <globals.h>
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>
@@ -20,7 +21,6 @@ RF24 radio(6,7);
 
 // Network uses that radio
 RF24Network network(radio);
-const int rootNode = 0;
 unsigned long lastSent = 0;
 bool lastValue = 0; 
 unsigned long sendInterval = 5000;
@@ -28,12 +28,7 @@ int packets_sent = 0;
 // Address of our node
 eeprom_info_t this_node;
 // Structure of our payload
-struct payload_t
-{
-  unsigned long value;
-  unsigned long counter;
-  char c;
-};
+
 
 void setup(void)
 {
@@ -60,23 +55,22 @@ void loop(void)
   {
     network.update();
     int time = millis();
-    sendData(rootNode, 100*getVoltage(), 'V');
-    sendData(rootNode, 100*getTemp(), 'T');
-    Serial.print("Time: ");
-    Serial.println(millis() - time);
+    while(!sendData(ROOTNODE, 100*getVoltage(), VOLT_SENSOR));
+    while(!sendData(ROOTNODE, 100*getTemp(), TEMP_SENSOR));
     sleepCycles = 0;
   }
   sleepCycles++;
   
   radio.powerDown();
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  delay(500);
+  //LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF);
     
 }
-bool sendData(uint16_t toNode, int value, char c)
+bool sendData(uint16_t toNode, int value, int sensorID)
 {
   Serial.print("Sending...: ");
   Serial.print(value);
-  payload_t payload = {value , packets_sent++, c};
+  payload_t payload = {NO_COMMAND, value,sensorID};
   RF24NetworkHeader header(/*to node*/ toNode);
   bool ok = network.write(header,&payload,sizeof(payload));
   if (ok)
