@@ -1,4 +1,4 @@
-#include <defines.h>
+#include <globals.h>
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>
@@ -7,9 +7,9 @@
 #include <printf.h>
 #include <avr/io.h> 
 #include <avr/wdt.h>
-int ledPin = 2;
+
 // nRF24L01(+) radio attached using Getting Started board 
-RF24 radio(6,7);
+RF24 radio(CE_PIN,CS_PIN);
 
 // Network uses that radio
 RF24Network network(radio);
@@ -17,19 +17,13 @@ RF24Network network(radio);
 // Address of our node
 eeprom_info_t this_node;
 // Structure of our payload
-struct payload_t
-{
-  unsigned long led;
-  unsigned long counter;
-  char c;
-};
+
 
 void setup(void)
 {
  
-  pinMode(ledPin,OUTPUT);
+  pinMode(RELAY_PIN,OUTPUT);
   Serial.begin(57600);
-  //test();
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
   this_node = nodeconfig_read();
@@ -55,19 +49,22 @@ void loop(void)
 }
 void readData(struct payload_t payload)
 {
+    int command = payload.command;
+    int value = payload.value;
+    
     Serial.print("Received packet: #");
-    Serial.print(payload.counter);
+    Serial.print(payload.command);
     Serial.print(" value: ");
-    Serial.print(payload.led);
-    Serial.print(" char: ");
-    Serial.println(payload.c);
-    if(payload.led == 1)
+    Serial.print(payload.value);
+    
+    switch (command) 
     {
-      digitalWrite(ledPin, HIGH);
-    }
-    else
-    {
-       digitalWrite(ledPin, LOW);
+      case CHANGEADRESS_COMMAND:
+        changeAddress(value);
+        break;
+      case CHANGERELAYSTATE_COMMAND:
+        changeRelayState(value);
+        break;
     }
   
 }
@@ -76,4 +73,8 @@ void changeAddress(int newAddress)
   eepromChangeAddress(newAddress);
   wdt_enable(WDTO_15MS);
   while(1);  
+}
+void changeRelayState(int newState)
+{
+  digitalWrite(RELAY_PIN, newState); 
 }
