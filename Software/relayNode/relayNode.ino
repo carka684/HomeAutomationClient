@@ -1,4 +1,4 @@
-
+#include <defines.h>
 #include <avr/pgmspace.h>
 #include <nodeconfig.h>
 #include <RF24Network.h>

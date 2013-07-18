@@ -1,0 +1,7 @@
+Meddelandet som huvudnoden hämtar bör innehålla:
+
+NodeID,Command,Value
+
+NodeID: Adressen i hierarkin, dvs vilken plats i trädet noden har.
+Command: Vilken kommando som ska köras. Te.x. ändra relä, byta nodadress,
+Value: Vilket värde som ska användas i kommandot. 
