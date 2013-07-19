@@ -2,6 +2,7 @@ Meddelandet som huvudnoden sänder bör innehålla:
 
 fromNode,value,sensorID
 
+rootNodeID: Unikt ID för denna nod, förprogrammerat.
 fromNode: Vilken nod i trädet som skickade datan
 value: Värdet som ska lagras
 sensorID: SensorID, en enhet kan ha flera sensorer och därför måste man avgöra vilken som skickade värdet

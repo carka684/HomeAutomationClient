@@ -10,23 +10,16 @@
 #define TONODECHAR '-'
 char nodeArray[10] = {
 };
-char seekCharArray[] = {'-','*'};
-char valueArray[10] = {};
+char seekCharArray[] = {
+  '-','*'};
+char valueArray[10] = {
+};
 int valueCounter = 0;
 int charCounter = 0;
 bool foundValue = false;
 
-
-
-int led = 0;
-uint16_t node = 0;
-int ledPin = 2;
-bool foundMinus = false;
-
-int i = 0;
-
 /*
-  INTERNETSAKER
+ * ETHERNET SETUP
  */
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
@@ -36,11 +29,9 @@ IPAddress server(79,136,60,91);
 unsigned long lastConnectionTime = 0;          // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                 // state of the connection last time through the main loop
 const unsigned long postingInterval = 1000;  // delay between updates, in milliseconds
-int time = 0;
-int counterStar = 0;
-int counterMinus = 0;
+int rootNodeID = 1111;
 /*
-  RADIOSAKER
+ * RF24 SETUP
  */
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(6,7);
@@ -55,13 +46,13 @@ eeprom_info_t this_node;
 //const uint16_t other_node = 0;
 
 // How often to send 'hello world to the other unit
-const unsigned long interval = 100; //ms
+//const unsigned long interval = 100; //ms
 
 // When did we last send?
-unsigned long last_sent;
+//unsigned long last_sent;
 
 // How many have we sent already
-unsigned long packets_sent;
+//unsigned long packets_sent;
 
 // Structure of our payload
 
@@ -77,9 +68,8 @@ message_t message;
 bool test = true;
 void setup(void)
 {
-  pinMode(ledPin,OUTPUT);
   Serial.begin(57600);
-  printf_begin();
+  //printf_begin();
   Serial.println("RF24Network/examples/helloworld_tx/");
   this_node = nodeconfig_read();
   SPI.begin();
@@ -89,7 +79,7 @@ void setup(void)
   Ethernet.begin(mac);
   Serial.print("My IP address: ");
   Serial.println(Ethernet.localIP());
-  
+
 }
 
 void loop(void)
@@ -102,10 +92,9 @@ void loop(void)
     payload_t payload;
     network.read(header,&payload,sizeof(payload));
     readData(payload, header.from_node);
-    
   }
-  
-  /*
+
+/*
   int i = 0;
   while (client.available()) {
     Serial.println(seekCharArray[i]);
@@ -113,7 +102,7 @@ void loop(void)
     int result = findChar(c,seekCharArray[i]);
     if(result)
     {
-      
+
       if(c == TONODECHAR)
       {
         //message.toNode = octToDec(result);
@@ -122,7 +111,7 @@ void loop(void)
       {
         //message.value = result; 
       }
-      
+
       if(i < (sizeof(seekCharArray)-1))
       {
         i++;
@@ -132,11 +121,11 @@ void loop(void)
         //sendData(message.toNode,message.value);
         break;
       }
-      
+
     }
   }
-  */
-   if (client.available()) {
+*/
+  if (client.available()) {
     char c = client.read();
     Serial.print(c);
   }
@@ -151,7 +140,6 @@ void loop(void)
   // your last connection, then connect again and send data:
   if(!client.connected() && (millis() - lastConnectionTime > postingInterval)) {
     //httpRequest();
-    //httpPostSensorData("");
   }
   // store the state of the connection for next time through
   // the loop:
@@ -160,32 +148,34 @@ void loop(void)
 // this method makes a HTTP connection to the server:
 void httpPostSensorData(float value,int sensorID, int fromNode)
 {
-    Serial.println("\n post");
-    if (client.connect(server, 80)) 
-    {
-      // send the HTTP PUT request:
-      client.print("GET /postSensorData.php?");
-      client.print("fromNode=");
-      client.print(fromNode);
-      client.print("&");
-      client.print("value=");
-      client.print(value/100);
-      client.print("&");
-      client.print("sensorID=");
-      client.print(sensorID);
-      client.println(" HTTP/1.1");
-      client.println("Host: www.calle.myxtreamer.net");
-      client.println("User-Agent: arduino-ethernet");
-      client.println("Connection: close");
-      client.println();
-      client.stop();
-      Serial.println("Post successful");
-    }  
-    else
-    {
-     Serial.println("Post failed");
-     client.stop();
-     }
+  Serial.println("\n post");
+  if (client.connect(server, 80)) 
+  {
+    // send the HTTP PUT request:
+    client.print("GET /postSensorData.php?");
+    //client.print("rootNodeID=");
+    //client.print(rootNodeID);
+    client.print("fromNode=");
+    client.print(fromNode);
+    client.print("&");
+    client.print("value=");
+    client.print(value/100);
+    client.print("&");
+    client.print("sensorID=");
+    client.print(sensorID);
+    client.println(" HTTP/1.1");
+    client.println("Host: www.calle.myxtreamer.net");
+    client.println("User-Agent: arduino-ethernet");
+    client.println("Connection: close");
+    client.println();
+    client.stop();
+    Serial.println("Post successful");
+  }  
+  else
+  {
+    Serial.println("Post failed");
+    client.stop();
+  }
 }
 void httpRequest() {
   Serial.println("http");
@@ -220,25 +210,25 @@ void httpRequest() {
 }
 void readData(struct payload_t payload, int fromNode)
 {
-    int command = payload.command;
-    int value = payload.value;
-    int sensorID = payload.sensorID;
-    Serial.print("Command: ");
-    Serial.print(command);
-    Serial.print(" Value: ");
-    Serial.print(value);
-    Serial.print(" SensorID: ");
-    Serial.println(sensorID);
+  int command = payload.command;
+  int value = payload.value;
+  int sensorID = payload.sensorID;
+  Serial.print("Command: ");
+  Serial.print(command);
+  Serial.print(" Value: ");
+  Serial.print(value);
+  Serial.print(" SensorID: ");
+  Serial.println(sensorID);
 
-    httpPostSensorData(value,sensorID,fromNode);
-  
+  httpPostSensorData(value,sensorID,fromNode);
+
 }
 
-bool sendData(uint16_t toNode, int value)
+bool sendData(uint16_t toNode, int value, int command)
 {
   Serial.print("Sending...");
   payload_t payload = {
-    value , packets_sent++, 'a'         };
+    command,value,NO_SENSOR      };
   RF24NetworkHeader header(/*to node*/ toNode);
   bool ok = network.write(header,&payload,sizeof(payload));
   if (ok)
@@ -255,7 +245,7 @@ int findChar(char currentChar, char seekChar)
     foundValue = true;
     return false; 
   }
-  
+
   if(currentChar == seekChar && !foundValue)
   {
     charCounter++;
@@ -281,72 +271,72 @@ int findChar(char currentChar, char seekChar)
 }
 /*
 void writeBit(char c)
-{
-  star(c);
-  minus(c);
-
-}
-
-  
-void star(char c)
-{
-  if(counterStar == 3)
-  {
-    if(c == '1')
-    {
-      led = 1;
-    }
-    if(c == '0')
-    {
-      led = 0;
-    }
-  }
-  if(c == '*')
-  {
-    counterStar++;
-
-  }
-  else
-  {
-    counterStar = 0;
-  }  
-}
-void minus(char c)
-{
-  if(counterMinus == 3 && c != '-')
-  {
-    nodeArray[i++] = c;
-    foundMinus = true;
-  }
-  if(c == '-' && !foundMinus)
-  {
-    counterMinus++;
-  }
-  else if(c == '-' && foundMinus)
-  {
-
-    node = octToDec(atoi(nodeArray));
-    counterMinus = 0;
-    i = 0;
-    memset(nodeArray, 0, 10);
-    foundMinus = false;
-    Serial.println(node, OCT);
-    
-    while(!sendData(node, led))
-      ;  
-
-
-  }
-  else if(c != '-' && foundMinus)
-  {
-    //DO NOTHING
-  }
-  else
-  {
-    counterMinus = 0;
-  }
-}
-*/
+ {
+ star(c);
+ minus(c);
+ 
+ }
+ 
+ 
+ void star(char c)
+ {
+ if(counterStar == 3)
+ {
+ if(c == '1')
+ {
+ led = 1;
+ }
+ if(c == '0')
+ {
+ led = 0;
+ }
+ }
+ if(c == '*')
+ {
+ counterStar++;
+ 
+ }
+ else
+ {
+ counterStar = 0;
+ }  
+ }
+ void minus(char c)
+ {
+ if(counterMinus == 3 && c != '-')
+ {
+ nodeArray[i++] = c;
+ foundMinus = true;
+ }
+ if(c == '-' && !foundMinus)
+ {
+ counterMinus++;
+ }
+ else if(c == '-' && foundMinus)
+ {
+ 
+ node = octToDec(atoi(nodeArray));
+ counterMinus = 0;
+ i = 0;
+ memset(nodeArray, 0, 10);
+ foundMinus = false;
+ Serial.println(node, OCT);
+ 
+ while(!sendData(node, led))
+ ;  
+ 
+ 
+ }
+ else if(c != '-' && foundMinus)
+ {
+ //DO NOTHING
+ }
+ else
+ {
+ counterMinus = 0;
+ }
+ }
+ */
 int octToDec(int n)
 {
 
@@ -379,6 +369,9 @@ int exp(int base, int expo)
   }
   return result;
 }
+
+
+
 
 
 
