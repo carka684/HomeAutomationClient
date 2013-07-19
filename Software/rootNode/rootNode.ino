@@ -69,7 +69,7 @@ bool test = true;
 void setup(void)
 {
   Serial.begin(57600);
-  //printf_begin();
+  printf_begin();
   Serial.println("RF24Network/examples/helloworld_tx/");
   this_node = nodeconfig_read();
   SPI.begin();
@@ -151,10 +151,14 @@ void httpPostSensorData(float value,int sensorID, int fromNode)
   Serial.println("\n post");
   if (client.connect(server, 80)) 
   {
+    
     // send the HTTP PUT request:
+   // client.print("GET /postSensorData.php?fromNode=1&value=3.06&rootNodeID=12&sensorID=14");
+    
     client.print("GET /postSensorData.php?");
-    //client.print("rootNodeID=");
-    //client.print(rootNodeID);
+    client.print("rootNodeID=");
+    client.print(rootNodeID);
+    client.print("&");
     client.print("fromNode=");
     client.print(fromNode);
     client.print("&");
@@ -163,12 +167,14 @@ void httpPostSensorData(float value,int sensorID, int fromNode)
     client.print("&");
     client.print("sensorID=");
     client.print(sensorID);
+    
     client.println(" HTTP/1.1");
     client.println("Host: www.calle.myxtreamer.net");
     client.println("User-Agent: arduino-ethernet");
     client.println("Connection: close");
     client.println();
     client.stop();
+    
     Serial.println("Post successful");
   }  
   else
