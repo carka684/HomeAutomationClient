@@ -6,8 +6,9 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <printf.h>
-#define VALUECHAR '*'
-#define TONODECHAR '-'
+#include <Xtea.h>
+
+
 char nodeArray[10] = {
 };
 char seekCharArray[] = {
@@ -41,20 +42,9 @@ RF24Network network(radio);
 
 eeprom_info_t this_node;
 
-
-// Address of the other node
-//const uint16_t other_node = 0;
-
-// How often to send 'hello world to the other unit
-//const unsigned long interval = 100; //ms
-
-// When did we last send?
-//unsigned long last_sent;
-
-// How many have we sent already
-//unsigned long packets_sent;
-
-// Structure of our payload
+//Ecryption
+unsigned long key[4] = {key0,key1,key2,key3};
+Xtea xtea(key);
 
 struct message_t
 {
@@ -93,7 +83,6 @@ void loop(void)
     network.read(header,&payload,sizeof(payload));
     readData(payload, header.from_node);
   }
-
 /*
   int i = 0;
   while (client.available()) {
@@ -153,8 +142,7 @@ void httpPostSensorData(float value,int sensorID, int fromNode)
   {
     
     // send the HTTP PUT request:
-   // client.print("GET /postSensorData.php?fromNode=1&value=3.06&rootNodeID=12&sensorID=14");
-    
+   
     client.print("GET /postSensorData.php?");
     client.print("rootNodeID=");
     client.print(rootNodeID);
@@ -216,25 +204,28 @@ void httpRequest() {
 }
 void readData(struct payload_t payload, int fromNode)
 {
-  int command = payload.command;
-  int value = payload.value;
-  int sensorID = payload.sensorID;
-  Serial.print("Command: ");
-  Serial.print(command);
+  unsigned long message[2] = {payload.value,payload.sensorID};
+  xtea.decrypt(message);
   Serial.print(" Value: ");
-  Serial.print(value);
+  Serial.print(message[0]);
   Serial.print(" SensorID: ");
-  Serial.println(sensorID);
+  Serial.println(message[1]);
 
-  httpPostSensorData(value,sensorID,fromNode);
+  //httpPostSensorData(value,sensorID,fromNode);
 
 }
 
-bool sendData(uint16_t toNode, int value, int command)
+bool sendData(uint16_t toNode, unsigned long value, unsigned long command)
 {
   Serial.print("Sending...");
-  payload_t payload = {
-    command,value,NO_SENSOR      };
+  unsigned long message[2] = {command,value};
+  xtea.encrypt(message);
+  payload_t payload = 
+  { 
+    message[0],
+    message[1],
+    NO_COMMAND
+  };
   RF24NetworkHeader header(/*to node*/ toNode);
   bool ok = network.write(header,&payload,sizeof(payload));
   if (ok)
@@ -243,6 +234,7 @@ bool sendData(uint16_t toNode, int value, int command)
     Serial.println("failed.");
   return ok;
 }
+
 int findChar(char currentChar, char seekChar)
 {
   if(charCounter == 3 && currentChar != seekChar)
@@ -275,74 +267,7 @@ int findChar(char currentChar, char seekChar)
     return false;
   } 
 }
-/*
-void writeBit(char c)
- {
- star(c);
- minus(c);
- 
- }
- 
- 
- void star(char c)
- {
- if(counterStar == 3)
- {
- if(c == '1')
- {
- led = 1;
- }
- if(c == '0')
- {
- led = 0;
- }
- }
- if(c == '*')
- {
- counterStar++;
- 
- }
- else
- {
- counterStar = 0;
- }  
- }
- void minus(char c)
- {
- if(counterMinus == 3 && c != '-')
- {
- nodeArray[i++] = c;
- foundMinus = true;
- }
- if(c == '-' && !foundMinus)
- {
- counterMinus++;
- }
- else if(c == '-' && foundMinus)
- {
- 
- node = octToDec(atoi(nodeArray));
- counterMinus = 0;
- i = 0;
- memset(nodeArray, 0, 10);
- foundMinus = false;
- Serial.println(node, OCT);
- 
- while(!sendData(node, led))
- ;  
- 
- 
- }
- else if(c != '-' && foundMinus)
- {
- //DO NOTHING
- }
- else
- {
- counterMinus = 0;
- }
- }
- */
+
 int octToDec(int n)
 {
 

@@ -8,6 +8,7 @@
 #include <printf.h>
 #include <avr/io.h> 
 #include <avr/wdt.h>
+#include <Xtea.h>
 
 int ledPin = 2;
 int tempC;
@@ -28,7 +29,11 @@ int packets_sent = 0;
 // Address of our node
 eeprom_info_t this_node;
 // Structure of our payload
-
+//Ecryption
+unsigned long key[4] = {key0,key1,key2,key3};
+Xtea xtea(key);
+ 
+unsigned long counter = 0;
 
 void setup(void)
 {
@@ -66,11 +71,17 @@ void loop(void)
   //LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF);
     
 }
-bool sendData(uint16_t toNode, int value, int sensorID)
+bool sendData(unsigned long toNode, unsigned long value, unsigned long sensorID)
 {
-  Serial.print("Sending...: ");
-  Serial.print(value);
-  payload_t payload = {NO_COMMAND, value,sensorID};
+  unsigned long message[2] = {value,sensorID};
+  xtea.encrypt(message);
+
+  payload_t payload = 
+  {
+    NO_COMMAND, 
+    message[0],
+    message[1]
+  };
   RF24NetworkHeader header(/*to node*/ toNode);
   bool ok = network.write(header,&payload,sizeof(payload));
   if (ok)
@@ -79,6 +90,7 @@ bool sendData(uint16_t toNode, int value, int sensorID)
     Serial.println("failed.");
   return ok;
 }
+
 float getTemp()
 {
   digitalWrite(transPin,HIGH);
@@ -98,4 +110,5 @@ void changeAddress(int newAddress)
   wdt_enable(WDTO_15MS);
   while(1);  
 }
+
 

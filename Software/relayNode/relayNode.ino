@@ -7,7 +7,7 @@
 #include <printf.h>
 #include <avr/io.h> 
 #include <avr/wdt.h>
-
+#include <Xtea.h>
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(CE_PIN,CS_PIN);
 
@@ -18,6 +18,9 @@ RF24Network network(radio);
 eeprom_info_t this_node;
 // Structure of our payload
 
+//Ecryption
+unsigned long key[4] = {key0,key1,key2,key3};
+Xtea xtea(key);
 
 void setup(void)
 {
@@ -49,24 +52,44 @@ void loop(void)
 }
 void readData(struct payload_t payload)
 {
-    int command = payload.command;
-    int value = payload.value;
+  unsigned long message[2] = {payload.command,payload.value};
+  xtea.decrypt(message);
+  unsigned long command = message[0];
+  unsigned long value = message[1];
+  Serial.print(" Command: ");
+  Serial.print(command);
+  Serial.print(" Value: ");
+  Serial.println(value);
     
-    Serial.print("Received packet: #");
-    Serial.print(payload.command);
-    Serial.print(" value: ");
-    Serial.print(payload.value);
-    
-    switch (command) 
-    {
-      case CHANGEADRESS_COMMAND:
-        changeAddress(value);
-        break;
-      case CHANGERELAYSTATE_COMMAND:
-        changeRelayState(value);
-        break;
-    }
+  switch (command) 
+  {
+    case CHANGEADRESS_COMMAND:
+      changeAddress(value);
+      break;
+    case CHANGERELAYSTATE_COMMAND:
+      changeRelayState(value);
+      break;
+  }
   
+}
+bool sendData(unsigned long toNode, unsigned long value, unsigned long sensorID)
+{
+  unsigned long message[2] = {value,sensorID};
+  xtea.encrypt(message);
+
+  payload_t payload = 
+  {
+    NO_COMMAND, 
+    message[0],
+    message[1]
+  };
+  RF24NetworkHeader header(/*to node*/ toNode);
+  bool ok = network.write(header,&payload,sizeof(payload));
+  if (ok)
+    Serial.println("ok.");
+  else
+    Serial.println("failed.");
+  return ok;
 }
 void changeAddress(int newAddress)
 {
