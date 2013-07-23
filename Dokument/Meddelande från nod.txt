@@ -1,8 +1,8 @@
-Meddelandet som huvudnoden sänder bör innehålla:
+Meddelandet som huvudnoden sï¿½nder bï¿½r innehï¿½lla:
 
-fromNode,value,sensorID
+rootNodeID,fromNode,value,sensorID
 
-rootNodeID: Unikt ID för denna nod, förprogrammerat.
-fromNode: Vilken nod i trädet som skickade datan
-value: Värdet som ska lagras
-sensorID: SensorID, en enhet kan ha flera sensorer och därför måste man avgöra vilken som skickade värdet
+rootNodeID: Unikt ID fï¿½r denna nod, fï¿½rprogrammerat.
+fromNode: Vilken nod i trï¿½det som skickade datan
+value: Vï¿½rdet som ska lagras
+sensorID: SensorID, en enhet kan ha flera sensorer och dï¿½rfï¿½r mï¿½ste man avgï¿½ra vilken som skickade vï¿½rdet
