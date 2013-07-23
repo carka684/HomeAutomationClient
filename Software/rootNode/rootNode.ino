@@ -43,23 +43,17 @@ RF24Network network(radio);
 eeprom_info_t this_node;
 
 //Ecryption
-unsigned long key[4] = {key0,key1,key2,key3};
+unsigned long key[4] = {KEY0,KEY1,KEY2,KEY3};
 Xtea xtea(key);
 
-struct message_t
-{
-  int toNode;
-  int value;
-  char c;
-};
 
-message_t message;
+
 
 bool test = true;
 void setup(void)
 {
   Serial.begin(57600);
-  printf_begin();
+  //printf_begin();
   Serial.println("RF24Network/examples/helloworld_tx/");
   this_node = nodeconfig_read();
   SPI.begin();
@@ -214,7 +208,25 @@ void readData(struct payload_t payload, int fromNode)
   //httpPostSensorData(value,sensorID,fromNode);
 
 }
-
+bool sendKey()
+{
+  Serial.print("Sending key...");
+  unsigned long toNode = 5;
+  payload_t payload = 
+  { 
+    key[0],
+    key[1],
+    key[2],
+    key[3]
+  };
+  RF24NetworkHeader header(/*to node*/ toNode,SEND_KEY_CHAR );
+  bool ok = network.write(header,&key,sizeof(key));
+  if (ok)
+    Serial.println("ok.");
+  else
+    Serial.println("failed.");
+  return ok;
+}
 bool sendData(uint16_t toNode, unsigned long value, unsigned long command)
 {
   Serial.print("Sending...");
@@ -224,9 +236,10 @@ bool sendData(uint16_t toNode, unsigned long value, unsigned long command)
   { 
     message[0],
     message[1],
-    NO_COMMAND
+    NO_COMMAND,
+    NO_RESERV
   };
-  RF24NetworkHeader header(/*to node*/ toNode);
+  RF24NetworkHeader header(/*to node*/ toNode, SEND_KEY_CHAR);
   bool ok = network.write(header,&payload,sizeof(payload));
   if (ok)
     Serial.println("ok.");

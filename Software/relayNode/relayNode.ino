@@ -19,7 +19,7 @@ eeprom_info_t this_node;
 // Structure of our payload
 
 //Ecryption
-unsigned long key[4] = {key0,key1,key2,key3};
+unsigned long key[4] = {KEY0,KEY1,KEY2,KEY3};
 Xtea xtea(key);
 
 void setup(void)
@@ -27,7 +27,7 @@ void setup(void)
  
   pinMode(RELAY_PIN,OUTPUT);
   Serial.begin(57600);
-  printf_begin();
+  //printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
   this_node = nodeconfig_read();
   SPI.begin();
@@ -47,8 +47,19 @@ void loop(void)
     RF24NetworkHeader header;
     payload_t payload;
     network.read(header,&payload,sizeof(payload));
-    readData(payload);
+    if(header.type == SEND_KEY_CHAR)
+    {
+      readKey(payload);
+    }
+    else
+    {
+      readData(payload);
+    }
   }
+}
+void readKey(struct payload_t payload)
+{
+  unsigned long key[4] = {payload.command,payload.value,payload.sensorID,payload.reserved};
 }
 void readData(struct payload_t payload)
 {
@@ -81,7 +92,8 @@ bool sendData(unsigned long toNode, unsigned long value, unsigned long sensorID)
   {
     NO_COMMAND, 
     message[0],
-    message[1]
+    message[1],
+    NO_RESERV
   };
   RF24NetworkHeader header(/*to node*/ toNode);
   bool ok = network.write(header,&payload,sizeof(payload));
