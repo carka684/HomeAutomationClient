@@ -53,7 +53,7 @@ bool test = true;
 void setup(void)
 {
   Serial.begin(57600);
-  //printf_begin();
+  printf_begin();
   Serial.println("RF24Network/examples/helloworld_tx/");
   this_node = nodeconfig_read();
   SPI.begin();
@@ -77,6 +77,7 @@ void loop(void)
     network.read(header,&payload,sizeof(payload));
     readData(payload, header.from_node);
   }
+
 /*
   int i = 0;
   while (client.available()) {

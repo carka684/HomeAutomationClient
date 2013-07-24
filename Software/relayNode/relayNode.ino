@@ -27,16 +27,18 @@ void setup(void)
  
   pinMode(RELAY_PIN,OUTPUT);
   Serial.begin(57600);
-  //printf_begin();
+  printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
   this_node = nodeconfig_read();
   SPI.begin();
   radio.begin();
   network.begin(/*channel*/ 90, /*node address*/ this_node.address);
+  changeAddress(5);
 }
 
 void loop(void)
 {
+  changeAddress(5);
   // Pump the network regularly
   network.update();
 
@@ -59,7 +61,13 @@ void loop(void)
 }
 void readKey(struct payload_t payload)
 {
-  unsigned long key[4] = {payload.command,payload.value,payload.sensorID,payload.reserved};
+  
+  unsigned long key[4] = {payload.value,payload.command,payload.sensorID,payload.reserved};
+  Serial.println(key[0],HEX);
+  Serial.println(key[1],HEX);
+  Serial.println(key[2],HEX);
+  Serial.println(key[3],HEX);
+  Serial.println("");
 }
 void readData(struct payload_t payload)
 {
@@ -105,9 +113,12 @@ bool sendData(unsigned long toNode, unsigned long value, unsigned long sensorID)
 }
 void changeAddress(int newAddress)
 {
-  eepromChangeAddress(newAddress);
-  wdt_enable(WDTO_15MS);
-  while(1);  
+  if(this_node.address != newAddress)
+  {
+    eepromChangeAddress(newAddress);
+    wdt_enable(WDTO_15MS);
+    while(1);  
+  }
 }
 void changeRelayState(int newState)
 {
