@@ -33,12 +33,11 @@ void setup(void)
   SPI.begin();
   radio.begin();
   network.begin(/*channel*/ 90, /*node address*/ this_node.address);
-  changeAddress(5);
+  changeAddress(3);
 }
 
 void loop(void)
 {
-  changeAddress(5);
   // Pump the network regularly
   network.update();
 
@@ -49,6 +48,8 @@ void loop(void)
     RF24NetworkHeader header;
     payload_t payload;
     network.read(header,&payload,sizeof(payload));
+    readData(payload);
+    /*
     if(header.type == SEND_KEY_CHAR)
     {
       readKey(payload);
@@ -57,6 +58,7 @@ void loop(void)
     {
       readData(payload);
     }
+    */
   }
 }
 void readKey(struct payload_t payload)
@@ -71,7 +73,7 @@ void readKey(struct payload_t payload)
 }
 void readData(struct payload_t payload)
 {
-  unsigned long message[2] = {payload.command,payload.value};
+  unsigned long message[2] = {payload.value,payload.command};
   xtea.decrypt(message);
   unsigned long command = message[0];
   unsigned long value = message[1];
@@ -86,6 +88,7 @@ void readData(struct payload_t payload)
       changeAddress(value);
       break;
     case CHANGERELAYSTATE_COMMAND:
+      Serial.println("changeRelay");
       changeRelayState(value);
       break;
   }

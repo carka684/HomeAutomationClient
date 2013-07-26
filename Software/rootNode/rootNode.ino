@@ -7,6 +7,8 @@
 #include <Ethernet.h>
 #include <printf.h>
 #include <Xtea.h>
+#include <TextFinder.h>
+
 
 
 char nodeArray[10] = {
@@ -25,11 +27,12 @@ bool foundValue = false;
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 EthernetClient client;
+TextFinder finder( client,1 );
 IPAddress server(79,136,60,91);
 
 unsigned long lastConnectionTime = 0;          // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                 // state of the connection last time through the main loop
-const unsigned long postingInterval = 1000;  // delay between updates, in milliseconds
+const unsigned long postingInterval = 200;  // delay between updates, in milliseconds
 int rootNodeID = 1111;
 /*
  * RF24 SETUP
@@ -39,19 +42,16 @@ RF24 radio(6,7);
 
 // Network uses that radio
 RF24Network network(radio);
-
 eeprom_info_t this_node;
 
 //Ecryption
 unsigned long key[4] = {KEY0,KEY1,KEY2,KEY3};
 Xtea xtea(key);
 
-
-
-
 bool test = true;
 void setup(void)
 {
+  pinMode(2, INPUT);
   Serial.begin(57600);
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_tx/");
@@ -77,41 +77,17 @@ void loop(void)
     network.read(header,&payload,sizeof(payload));
     readData(payload, header.from_node);
   }
+  
 
-/*
-  int i = 0;
-  while (client.available()) {
-    Serial.println(seekCharArray[i]);
-    char c = client.read();
-    int result = findChar(c,seekCharArray[i]);
-    if(result)
-    {
-
-      if(c == TONODECHAR)
-      {
-        //message.toNode = octToDec(result);
-      }
-      else if(c == VALUECHAR)
-      {
-        //message.value = result; 
-      }
-
-      if(i < (sizeof(seekCharArray)-1))
-      {
-        i++;
-      }
-      else
-      {
-        //sendData(message.toNode,message.value);
-        break;
-      }
-
-    }
-  }
-*/
   if (client.available()) {
-    char c = client.read();
-    Serial.print(c);
+    Serial.println(millis());
+    finder.find("ToNode");  
+    long value = finder.getValue(); 
+    Serial.println(value);
+    finder.find("Value"); 
+    long value1 = finder.getValue(); 
+    Serial.println(value1); 
+    client.stop();
   }
 
   // if there's no net connection, but there was one last time
@@ -123,7 +99,7 @@ void loop(void)
   // if you're not connected, and ten seconds have passed since
   // your last connection, then connect again and send data:
   if(!client.connected() && (millis() - lastConnectionTime > postingInterval)) {
-    //httpRequest();
+    httpRequest();
   }
   // store the state of the connection for next time through
   // the loop:
@@ -228,7 +204,7 @@ bool sendKey()
     Serial.println("failed.");
   return ok;
 }
-bool sendData(uint16_t toNode, unsigned long value, unsigned long command)
+bool sendData(uint16_t toNode, unsigned long command,unsigned long value)
 {
   Serial.print("Sending...");
   unsigned long message[2] = {command,value};
@@ -248,40 +224,6 @@ bool sendData(uint16_t toNode, unsigned long value, unsigned long command)
     Serial.println("failed.");
   return ok;
 }
-
-int findChar(char currentChar, char seekChar)
-{
-  if(charCounter == 3 && currentChar != seekChar)
-  {
-    valueArray[valueCounter++] = currentChar;
-    foundValue = true;
-    return false; 
-  }
-
-  if(currentChar == seekChar && !foundValue)
-  {
-    charCounter++;
-    return false;
-  }
-  else if(currentChar == seekChar && foundValue)
-  {
-    int tempValue = atoi(valueArray);
-    charCounter = 0;
-    memset(valueArray, 0, 10);
-    foundValue = false;
-    return tempValue;
-  }
-  else if(currentChar != seekChar && foundValue)
-  {
-    return false;
-  }
-  else
-  {
-    charCounter = 0;
-    return false;
-  } 
-}
-
 int octToDec(int n)
 {
 
