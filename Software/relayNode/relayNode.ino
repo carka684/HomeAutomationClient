@@ -8,6 +8,8 @@
 #include <avr/io.h> 
 #include <avr/wdt.h>
 #include <Xtea.h>
+#include <ClickButton.h>
+
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(CE_PIN,CS_PIN);
 
@@ -22,10 +24,16 @@ eeprom_info_t this_node;
 unsigned long key[4] = {KEY0,KEY1,KEY2,KEY3};
 Xtea xtea(key);
 
+
+//ResetButton
+const int resetButtonPin = 4;
+ClickButton resetButton(resetButtonPin, HIGH, CLICKBTN_PULLUP);
+
 void setup(void)
 {
- 
   pinMode(RELAY_PIN,OUTPUT);
+  resetButton.debounceTime   = 20;   // Debounce timer in ms
+  resetButton.heldDownTime   = 4000; // time until "held-down clicks" register
   Serial.begin(57600);
   printf_begin();
   Serial.println("RF24Network/examples/helloworld_rx/");
@@ -38,6 +46,11 @@ void setup(void)
 
 void loop(void)
 {
+  resetButton.Update();
+  if(resetButton.click == -1)
+  {
+    Serial.println("Long");
+  }
   // Pump the network regularly
   network.update();
 
@@ -126,4 +139,12 @@ void changeAddress(int newAddress)
 void changeRelayState(int newState)
 {
   digitalWrite(RELAY_PIN, newState); 
+}
+//Set address to factory default and reset the atmega
+void factoryReset()
+{
+  Serial.println("Reset");
+  eepromChangeAddress(FACTORY_DEFAULT_ADDRESS);
+  wdt_enable(WDTO_15MS);
+  while(1);  
 }
