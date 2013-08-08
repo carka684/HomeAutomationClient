@@ -67,7 +67,7 @@ void loop(void)
     {
       readKey(payload);
     }
-    else
+    else if(
     {
       readData(payload);
     }
