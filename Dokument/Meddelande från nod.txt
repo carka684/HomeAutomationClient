@@ -1,8 +1,8 @@
-Meddelandet som huvudnoden s�nder b�r inneh�lla:
+Meddelandet som huvudnoden sänder bör innehålla:
 
 rootNodeID,fromNode,value,sensorID
 
-rootNodeID: Unikt ID f�r denna nod, f�rprogrammerat.
-fromNode: Vilken nod i tr�det som skickade datan
-value: V�rdet som ska lagras
-sensorID: SensorID, en enhet kan ha flera sensorer och d�rf�r m�ste man avg�ra vilken som skickade v�rdet
+rootNodeID: Unikt ID för denna nod, förprogrammerat.
+fromNode: Vilken nod i trädet som skickade datan
+value: Värdet som ska lagras
+sensorID: SensorID, en enhet kan ha flera sensorer och därför måste man avgöra vilken som skickade värdet
